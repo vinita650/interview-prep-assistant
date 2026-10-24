@@ -1,0 +1,4 @@
+openai==3.24.0
+chromadb==1.5.9
+streamlit==1.65.0
+pypdf==6.19.0

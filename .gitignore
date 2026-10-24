@@ -1,0 +1,5 @@
+.venv/
+.streamlit/secrets.toml
+__pycache__/
+*.pdf
+weak_spots.json
