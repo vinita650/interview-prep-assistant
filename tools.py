@@ -1,4 +1,5 @@
 import json
+import random
 from pathlib import Path
 from openai import OpenAI
 import chromadb
@@ -92,6 +93,24 @@ def list_weak_spots() -> str:
     return result
 
 
+def pick_quiz_topic() -> str:
+    """Pick one weak spot at random to quiz the user on."""
+    script_dir = Path(__file__).parent
+    weak_spots_path = script_dir / "weak_spots.json"
+
+    if not weak_spots_path.exists():
+        return "No weak spots yet, so there is nothing to quiz on."
+
+    with open(weak_spots_path, "r") as f:
+        weak_spots = json.load(f)
+
+    if not weak_spots:
+        return "No weak spots yet, so there is nothing to quiz on."
+
+    spot = random.choice(weak_spots)
+    return f"Quiz topic: {spot['topic']}\nNote: {spot['note']}"
+
+
 if __name__ == "__main__":
     print("=== Testing search_docs ===")
     result = search_docs("What is RAG?")
@@ -105,4 +124,9 @@ if __name__ == "__main__":
 
     print("=== Testing list_weak_spots ===")
     result = list_weak_spots()
+    print(result)
+    print()
+
+    print("=== Testing pick_quiz_topic ===")
+    result = pick_quiz_topic()
     print(result)

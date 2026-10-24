@@ -1,7 +1,7 @@
 import json
 import streamlit as st
 from openai import OpenAI
-from tools import search_docs, save_weak_spot, list_weak_spots
+from tools import search_docs, save_weak_spot, list_weak_spots, pick_quiz_topic
 
 SYSTEM = """You are an interview prep assistant. Answer questions about RAG and MCP only from search_docs results.
 Always cite sources like [filename p.X].
@@ -58,8 +58,23 @@ TOOLS = [
                 "properties": {}
             }
         }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "pick_quiz_topic",
+            "description": "Pick one topic from the revision list at random to quiz the user on. Returns the topic and its note. Use this when the user asks to be quizzed or tested on their weak spots. After it returns, ask the user one question about that topic and check their answer with search_docs.",
+            "parameters": {
+                "type": "object",
+                "properties": {}
+            }
+        }
     }
 ]
+
+
+class RoundLimitReached(Exception):
+    """Raised when the tool-calling loop uses up max_rounds without a final answer."""
 
 
 def run_turn(messages, on_tool=print, max_rounds=5):
@@ -73,6 +88,9 @@ def run_turn(messages, on_tool=print, max_rounds=5):
 
     Returns:
         The final text response from the model
+
+    Raises:
+        RoundLimitReached: if the model is still calling tools after max_rounds
     """
     client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
@@ -115,6 +133,8 @@ def run_turn(messages, on_tool=print, max_rounds=5):
                     result = save_weak_spot(tool_args["topic"], tool_args["note"])
                 elif tool_name == "list_weak_spots":
                     result = list_weak_spots()
+                elif tool_name == "pick_quiz_topic":
+                    result = pick_quiz_topic()
                 else:
                     result = f"Unknown tool: {tool_name}"
 
@@ -133,7 +153,7 @@ def run_turn(messages, on_tool=print, max_rounds=5):
             return response.choices[0].message.content
 
     # Max rounds reached
-    return "Stopped"
+    raise RoundLimitReached(f"No final answer after {max_rounds} rounds")
 
 
 if __name__ == "__main__":
@@ -153,5 +173,8 @@ if __name__ == "__main__":
 
         messages.append({"role": "user", "content": user_input})
 
-        response = run_turn(messages)
+        try:
+            response = run_turn(messages)
+        except RoundLimitReached:
+            response = "I ran out of room to finish that answer. Try a simpler or narrower question."
         print(f"\nAssistant: {response}\n")
