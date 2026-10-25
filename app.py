@@ -9,6 +9,7 @@ LIMIT_MESSAGE = (
 st.set_page_config(page_title="Interview Prep", layout="centered")
 
 st.title("Interview Prep Assistant")
+st.caption("Demo app: the revision list and quiz are shared by everyone using this link and reset when the app restarts.")
 st.caption("It answers interview questions from my RAG and MCP cheat sheets, with page citations, and keeps a revision list of the topics I got wrong.")
 
 # Initialize session state with SYSTEM message
